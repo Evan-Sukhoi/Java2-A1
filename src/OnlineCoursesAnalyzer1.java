@@ -3,8 +3,10 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -12,6 +14,7 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.LinkedHashMap;
+import java.util.HashMap;
 
 public class OnlineCoursesAnalyzer1 {
 
@@ -45,6 +48,34 @@ public class OnlineCoursesAnalyzer1 {
         private double percentMale;
         private double percentFemale;
         private double percentBachelorsDegreeOrHigher;
+
+        public Course(Course course) {
+            this.institution = course.institution;
+            this.courseNumber = course.courseNumber;
+            this.launchDate = course.launchDate;
+            this.courseTitle = course.courseTitle;
+            this.instructors = course.instructors;
+            this.instructorsSet = course.instructorsSet;
+            this.courseSubjectSet = course.courseSubjectSet;
+            this.courseSubject = course.courseSubject;
+            this.year = course.year;
+            this.honorCodeCertificates = course.honorCodeCertificates;
+            this.participants = course.participants;
+            this.audited = course.audited;
+            this.certified = course.certified;
+            this.percentAudited = course.percentAudited;
+            this.percentCertified = course.percentCertified;
+            this.percentCertifiedOfAudited = course.percentCertifiedOfAudited;
+            this.percentPlayedVideo = course.percentPlayedVideo;
+            this.percentPostedInForum = course.percentPostedInForum;
+            this.percentGradeHigherThanZero = course.percentGradeHigherThanZero;
+            this.totalCourseHours = course.totalCourseHours;
+            this.medianHoursForCertification = course.medianHoursForCertification;
+            this.medianAge = course.medianAge;
+            this.percentMale = course.percentMale;
+            this.percentFemale = course.percentFemale;
+            this.percentBachelorsDegreeOrHigher = course.percentBachelorsDegreeOrHigher;
+        }
 
         @Override
         public String toString() {
@@ -102,12 +133,15 @@ public class OnlineCoursesAnalyzer1 {
             this.percentFemale = percentFemale;
             this.percentBachelorsDegreeOrHigher = percentBachelorsDegreeOrHigher;
 
+            this.courseTitle = courseTitle.replaceAll("\"", "");
+
             this.instructors = instructors.replaceAll("\"", "");
-            this.instructorsSet = Stream.of(instructors.split(","))
+            this.instructorsSet = Stream.of(this.instructors.split(","))
                 .map(String::trim)
                 .collect(Collectors.toSet());
+
             this.courseSubject = courseSubject.replaceAll("\"", "");
-            this.courseSubjectSet = Stream.of(courseSubject.split(","))
+            this.courseSubjectSet = Stream.of(this.courseSubject.split(","))
                 .map(String::trim)
                 .collect(Collectors.toSet());
         }
@@ -121,13 +155,33 @@ public class OnlineCoursesAnalyzer1 {
         }
 
         public Set<String> getCourseSubjectSet() {
-//            return courseSubjectSet.toString();
             return courseSubjectSet;
         }
 
         public String getCourseSubject() {
             return courseSubject;
         }
+
+        public Set<String> getInstructorsSet() {
+            return instructorsSet;
+        }
+
+        public String getInstructors() {
+            return instructors;
+        }
+
+        public String getCourseTitle() {
+            return courseTitle;
+        }
+
+        public double getTotalCourseHours() {
+            return totalCourseHours;
+        }
+
+        public void setInstructors(String instructor) {
+            this.instructors = instructor;
+        }
+
     }
 
     public OnlineCoursesAnalyzer1(String datasetPath) throws IOException {
@@ -168,6 +222,7 @@ public class OnlineCoursesAnalyzer1 {
             br.readLine();
             while ((line = br.readLine()) != null) {
                 String[] info = line.split(",(?=([^\\\"]*\\\"[^\\\"]*\\\")*[^\\\"]*$)", -1);
+
                 Course course = new Course(info[0], info[1], new Date(info[2]), info[3], info[4],
                     info[5],
                     Integer.parseInt(info[6]), Integer.parseInt(info[7]), Integer.parseInt(info[8]),
@@ -226,12 +281,76 @@ public class OnlineCoursesAnalyzer1 {
 
     //3
     public Map<String, List<List<String>>> getCourseListOfInstructor() {
-        return null;
+        Map<String, List<List<String>>> map = new HashMap<>();
+
+        // First, group courses by instructor name
+        Map<String, List<Course>> coursesByInstructor = courses.stream()
+            .flatMap(course -> course.getInstructorsSet().stream()
+                .map(instructor -> {
+                    Course copy = new Course(course);
+                    copy.setInstructors(instructor);
+                    return copy;
+                })
+            )
+            .collect(Collectors.groupingBy(Course::getInstructors));
+
+        // For each instructor, create a list of their independently responsible and co-developed courses
+        for (Map.Entry<String, List<Course>> entry : coursesByInstructor.entrySet()) {
+            List<Course> courses = entry.getValue();
+
+            // Create a set to hold course titles and lists to hold independently responsible and co-developed courses
+            Set<String> independentCourses = new HashSet<>();
+            Set<String> coDevelopedCourses = new HashSet<>();
+
+            // Sort courses by course title and add unique course titles to the appropriate list
+            courses.stream()
+                .sorted(Comparator.comparing(Course::getCourseTitle))
+                .forEach(course -> {
+                    String courseTitle = course.getCourseTitle();
+                    if (course.getInstructorsSet().size() == 1 && !independentCourses.contains(
+                        courseTitle)) {
+                        independentCourses.add(courseTitle);
+                    } else if (!coDevelopedCourses.contains(courseTitle)
+                        && course.getInstructorsSet().size() != 1) {
+                        coDevelopedCourses.add(courseTitle);
+                    }
+                });
+
+            // Add instructor and course lists to map
+            List<List<String>> courseLists = new ArrayList<>();
+            courseLists.add(new ArrayList<>(independentCourses).stream()
+                .sorted(Comparator.naturalOrder())
+                .collect(Collectors.toList()));
+            courseLists.add(new ArrayList<>(coDevelopedCourses).stream()
+                .sorted(Comparator.naturalOrder())
+                .collect(Collectors.toList()));
+            map.put(entry.getKey(), courseLists);
+        }
+
+        return map;
     }
+
 
     //4
     public List<String> getCourses(int topK, String by) {
-        return null;
+        switch (by) {
+            case "hours":
+                return courses.stream()
+                    .sorted(Comparator.comparing(Course::getTotalCourseHours).reversed())
+                    .map(Course::getCourseTitle)
+                    .distinct()
+                    .limit(topK)
+                    .collect(Collectors.toList());
+            case "participants":
+                return courses.stream()
+                    .sorted(Comparator.comparing(Course::getParticipants).reversed())
+                    .map(Course::getCourseTitle)
+                    .distinct()
+                    .limit(topK)
+                    .collect(Collectors.toList());
+            default:
+                return null;
+        }
     }
 
     //5
@@ -248,10 +367,11 @@ public class OnlineCoursesAnalyzer1 {
     public static void main(String[] args) throws IOException {
         OnlineCoursesAnalyzer1 analyzer = new OnlineCoursesAnalyzer1("resources/local.csv");
         //sort the map by the alphabetical order of the institution.
-        analyzer.getPtcpCountByInst().forEach((k, v) -> System.out.println(k + ": " + v));
-        analyzer.getPtcpCountByInstAndSubject().forEach((k, v) -> System.out.println(k + ": " + v));
+//        analyzer.getPtcpCountByInst().forEach((k, v) -> System.out.println(k + ": " + v));
+//        analyzer.getPtcpCountByInstAndSubject().forEach((k, v) -> System.out.println(k + ": " + v));
+        analyzer.getCourseListOfInstructor().forEach((k, v) -> System.out.println(k + " == " + v));
 
-//        System.out.println(analyzer.courses.get(0).getCourseSubject());
+//        System.out.println(analyzer.courses.get(183).getInstructorsSet().toString());
 
 //            analyzer.courses.limit(10).forEach(System.out::println);
 
