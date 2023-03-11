@@ -1,8 +1,10 @@
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -11,12 +13,13 @@ import java.util.stream.Stream;
 
 public class OnlineCoursesAnalyzer1 {
 
-    Stream<Course> courses;
+    List<Course> courses;
 
     public static class Course {
+
         private String institution;
         private String courseNumber;
-        private String launchDate;
+        private Date launchDate;
         private String courseTitle;
         private String instructors;
         private Set<String> instructorsSet;
@@ -26,23 +29,23 @@ public class OnlineCoursesAnalyzer1 {
         private int year;
         private int honorCodeCertificates;  // maybe boolean
         private int participants;
-        private float audited;
-        private float certified;
-        private float percentAudited;
-        private float percentCertified;
-        private float percentCertifiedOfAudited;
-        private float percentPlayedVideo;
-        private float percentPostedInForum;
-        private float percentGradeHigherThanZero;
-        private float totalCourseHours;
-        private float medianHoursForCertification;
-        private float medianAge;
-        private float percentMale;
-        private float percentFemale;
-        private float percentBachelorsDegreeOrHigher;
+        private double audited;
+        private double certified;
+        private double percentAudited;
+        private double percentCertified;
+        private double percentCertifiedOfAudited;
+        private double percentPlayedVideo;
+        private double percentPostedInForum;
+        private double percentGradeHigherThanZero;
+        private double totalCourseHours;
+        private double medianHoursForCertification;
+        private double medianAge;
+        private double percentMale;
+        private double percentFemale;
+        private double percentBachelorsDegreeOrHigher;
 
         @Override
-        public String toString(){
+        public String toString() {
             return this.getInstitution()
                 + this.getCourseSubjectSet().toString()
                 + this.getParticipants();
@@ -51,27 +54,27 @@ public class OnlineCoursesAnalyzer1 {
         public Course(
             String institution,
             String courseNumber,
-            String launchDate,
+            Date launchDate,
             String courseTitle,
             String instructors,
             String courseSubject,
             int year,
             int honorCodeCertificates,
             int participants,
-            float audited,
-            float certified,
-            float percentAudited,
-            float percentCertified,
-            float percentCertifiedOfAudited,
-            float percentPlayedVideo,
-            float percentPostedInForum,
-            float percentGradeHigherThanZero,
-            float totalCourseHours,
-            float medianHoursForCertification,
-            float medianAge,
-            float percentMale,
-            float percentFemale,
-            float percentBachelorsDegreeOrHigher
+            double audited,
+            double certified,
+            double percentAudited,
+            double percentCertified,
+            double percentCertifiedOfAudited,
+            double percentPlayedVideo,
+            double percentPostedInForum,
+            double percentGradeHigherThanZero,
+            double totalCourseHours,
+            double medianHoursForCertification,
+            double medianAge,
+            double percentMale,
+            double percentFemale,
+            double percentBachelorsDegreeOrHigher
         ) {
             this.institution = institution;
             this.courseNumber = courseNumber;
@@ -123,59 +126,123 @@ public class OnlineCoursesAnalyzer1 {
     }
 
     public OnlineCoursesAnalyzer1(String datasetPath) throws IOException {
-        this.courses = Files.lines(Paths.get(datasetPath))
-            .skip(1)
-            .map(l -> l.split(",(?=([^\\\"]*\\\"[^\\\"]*\\\")*[^\\\"]*$)"))
-            .map(a -> new Course(
-                a[0],
-                a[1],
-                a[2],
-                a[3],
-                a[4],
-                a[5],
-                Integer.parseInt(a[6]),
-                Integer.parseInt(a[7]),
-                Integer.parseInt(a[8]),
-                Float.parseFloat(a[9]),
-                Float.parseFloat(a[10]),
-                Float.parseFloat(a[11]),
-                Float.parseFloat(a[12]),
-                Float.parseFloat(a[13]),
-                Float.parseFloat(a[14]),
-                Float.parseFloat(a[15]),
-                Float.parseFloat(a[16]),
-                Float.parseFloat(a[17]),
-                Float.parseFloat(a[18]),
-                Float.parseFloat(a[19]),
-                Float.parseFloat(a[20]),
-                Float.parseFloat(a[21]),
-                Float.parseFloat(a[22])
-            ));
+//        this.courses = Files.lines(Paths.get(datasetPath))
+//            .skip(1)
+//            .map(l -> l.split(",(?=([^\\\"]*\\\"[^\\\"]*\\\")*[^\\\"]*$)"))
+//            .map(a -> new Course(
+//                a[0],
+//                a[1],
+//                a[2],
+//                a[3],
+//                a[4],
+//                a[5],
+//                Integer.parseInt(a[6]),
+//                Integer.parseInt(a[7]),
+//                Integer.parseInt(a[8]),
+//                double.parsedouble(a[9]),
+//                double.parsedouble(a[10]),
+//                double.parsedouble(a[11]),
+//                double.parsedouble(a[12]),
+//                double.parsedouble(a[13]),
+//                double.parsedouble(a[14]),
+//                double.parsedouble(a[15]),
+//                double.parsedouble(a[16]),
+//                double.parsedouble(a[17]),
+//                double.parsedouble(a[18]),
+//                double.parsedouble(a[19]),
+//                double.parsedouble(a[20]),
+//                double.parsedouble(a[21]),
+//                double.parsedouble(a[22])
+//            ));
 
+        this.courses = new ArrayList<>();
+        BufferedReader br = null;
+        String line;
+        try {
+            br = new BufferedReader(new FileReader(datasetPath, StandardCharsets.UTF_8));
+            br.readLine();
+            while ((line = br.readLine()) != null) {
+                String[] info = line.split(",(?=([^\\\"]*\\\"[^\\\"]*\\\")*[^\\\"]*$)", -1);
+                Course course = new Course(info[0], info[1], new Date(info[2]), info[3], info[4],
+                    info[5],
+                    Integer.parseInt(info[6]), Integer.parseInt(info[7]), Integer.parseInt(info[8]),
+                    Integer.parseInt(info[9]), Integer.parseInt(info[10]),
+                    Double.parseDouble(info[11]),
+                    Double.parseDouble(info[12]), Double.parseDouble(info[13]),
+                    Double.parseDouble(info[14]),
+                    Double.parseDouble(info[15]), Double.parseDouble(info[16]),
+                    Double.parseDouble(info[17]),
+                    Double.parseDouble(info[18]), Double.parseDouble(info[19]),
+                    Double.parseDouble(info[20]),
+                    Double.parseDouble(info[20]), Double.parseDouble(info[21]));
+                courses.add(course);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (br != null) {
+                try {
+                    br.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
     }
 
-    public TreeMap<String, Integer> getPtcpCountByInst() {
-        TreeMap<String, Integer> map = courses.collect(
-            Collectors.groupingBy(
-                Course::getInstitution,
-                TreeMap::new,
-                Collectors.summingInt(Course::getParticipants)
-            )
-        );
+    public Map<String, Integer> getPtcpCountByInst() {
+        Map<String, Integer> map = courses.stream()
+            .collect(
+                Collectors.groupingBy(
+                    Course::getInstitution,
+                    Collectors.summingInt(Course::getParticipants)
+                )
+            );
         return map;
     }
 
-    public static void main(String[] args) {
-        try {
-            OnlineCoursesAnalyzer1 analyzer = new OnlineCoursesAnalyzer1("local.csv");
-            //sort the map by the alphabetical order of the institution.
-            analyzer.getPtcpCountByInst().forEach((k, v) -> System.out.println(k + ": " + v));
+    public Map<String, Integer> getPtcpCountByInstAndSubject() {
+        //  the value is the total number of participants in a course Subject of an institution
+        Map<String, Integer> map = courses.stream()
+            .collect(
+                Collectors.groupingBy(
+                    c -> c.getInstitution() + "-" + c.getCourseSubjectSet().toString(),
+                    Collectors.summingInt(Course::getParticipants)
+                )
+            );
+        return map;
+    }
+
+
+    //3
+    public Map<String, List<List<String>>> getCourseListOfInstructor() {
+        return null;
+    }
+
+    //4
+    public List<String> getCourses(int topK, String by) {
+        return null;
+    }
+
+    //5
+    public List<String> searchCourses(String courseSubject, double percentAudited,
+        double totalCourseHours) {
+        return null;
+    }
+
+    //6
+    public List<String> recommendCourses(int age, int gender, int isBachelorOrHigher) {
+        return null;
+    }
+
+    public static void main(String[] args) throws IOException {
+        OnlineCoursesAnalyzer1 analyzer = new OnlineCoursesAnalyzer1("resources/local.csv");
+        //sort the map by the alphabetical order of the institution.
+        analyzer.getPtcpCountByInst().forEach((k, v) -> System.out.println(k + ": " + v));
+        analyzer.getPtcpCountByInstAndSubject().forEach((k, v) -> System.out.println(k + ": " + v));
 
 //            analyzer.courses.limit(10).forEach(System.out::println);
 
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 
 }
