@@ -3,6 +3,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -10,6 +11,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.LinkedHashMap;
 
 public class OnlineCoursesAnalyzer1 {
 
@@ -100,11 +102,11 @@ public class OnlineCoursesAnalyzer1 {
             this.percentFemale = percentFemale;
             this.percentBachelorsDegreeOrHigher = percentBachelorsDegreeOrHigher;
 
-            instructors = instructors.replaceAll("\"", "");
+            this.instructors = instructors.replaceAll("\"", "");
             this.instructorsSet = Stream.of(instructors.split(","))
                 .map(String::trim)
                 .collect(Collectors.toSet());
-            courseSubject = courseSubject.replaceAll("\"", "");
+            this.courseSubject = courseSubject.replaceAll("\"", "");
             this.courseSubjectSet = Stream.of(courseSubject.split(","))
                 .map(String::trim)
                 .collect(Collectors.toSet());
@@ -123,6 +125,9 @@ public class OnlineCoursesAnalyzer1 {
             return courseSubjectSet;
         }
 
+        public String getCourseSubject() {
+            return courseSubject;
+        }
     }
 
     public OnlineCoursesAnalyzer1(String datasetPath) throws IOException {
@@ -202,14 +207,19 @@ public class OnlineCoursesAnalyzer1 {
     }
 
     public Map<String, Integer> getPtcpCountByInstAndSubject() {
-        //  the value is the total number of participants in a course Subject of an institution
         Map<String, Integer> map = courses.stream()
             .collect(
                 Collectors.groupingBy(
-                    c -> c.getInstitution() + "-" + c.getCourseSubjectSet().toString(),
+                    c -> c.getInstitution() + "-" + c.getCourseSubject(),
                     Collectors.summingInt(Course::getParticipants)
                 )
             );
+
+        map = map.entrySet().stream()
+            .sorted(Map.Entry.<String, Integer>comparingByValue().reversed()
+                .thenComparing(Map.Entry.comparingByKey()))
+            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,
+                (oldValue, newValue) -> oldValue, LinkedHashMap::new));
         return map;
     }
 
@@ -240,6 +250,8 @@ public class OnlineCoursesAnalyzer1 {
         //sort the map by the alphabetical order of the institution.
         analyzer.getPtcpCountByInst().forEach((k, v) -> System.out.println(k + ": " + v));
         analyzer.getPtcpCountByInstAndSubject().forEach((k, v) -> System.out.println(k + ": " + v));
+
+//        System.out.println(analyzer.courses.get(0).getCourseSubject());
 
 //            analyzer.courses.limit(10).forEach(System.out::println);
 
