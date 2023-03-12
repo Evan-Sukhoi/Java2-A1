@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.LinkedHashMap;
 import java.util.HashMap;
@@ -400,53 +401,31 @@ public class OnlineCoursesAnalyzer {
             .entrySet().stream()
             .collect(Collectors.toMap(Map.Entry::getKey,
                 entry -> {
-                    List<Double> values = entry.getValue().stream()
-                        .flatMap(List::stream)
-                        .toList();
-                    double medianAgeAvg = values.stream()
-                        .mapToDouble(Double::doubleValue)
-                        .average()
-                        .orElse(0.0);
-                    double percentMaleAvg = values.stream()
-                        .skip(1)
-                        .mapToDouble(Double::doubleValue)
-                        .average()
-                        .orElse(0.0);
-                    double percentBachelorsDegreeOrHigherAvg = values.stream()
-                        .skip(2)
-                        .mapToDouble(Double::doubleValue)
-                        .average()
-                        .orElse(0.0);
-                    return Math.pow(age - medianAgeAvg, 2) +
-                        Math.pow((gender * 100) - percentMaleAvg, 2) +
-                        Math.pow((isBachelorOrHigher * 100) - percentBachelorsDegreeOrHigherAvg, 2);
+                    double[] averages = IntStream.range(0, 3) // 获取每一列
+                        .mapToDouble(column -> entry.getValue().stream() // 将每一行映射为这一列的元素
+                            .mapToDouble(row -> row.get(column))
+                            .average()
+                            .orElse(0.0))
+                        .toArray(); // 将平均值放到数组中
+
+                    return Math.pow(age - averages[0], 2) +
+                        Math.pow((gender * 100) - averages[1], 2) +
+                        Math.pow((isBachelorOrHigher * 100) - averages[2], 2);
                 }));
 
-
-//        Map<String, Double> map = courses.stream()
-//            .collect(Collectors.groupingBy(Course::getCourseNumber, course -> {
-//                double ageAvg = courses.stream()
-//                    .filter(c -> c.getCourseNumber().equals(course.getCourseNumber()))
-//                    .collect(Collectors.averagingDouble(Course::getMedianAge));
-//                double genderAvg = courses.stream()
-//                    .filter(c -> c.getCourseNumber().equals(course.getCourseNumber()))
-//                    .collect(Collectors.averagingDouble(c -> c.getPercentMale() / 100.0));
-//                double bachelorsAvg = courses.stream()
-//                    .filter(c -> c.getCourseNumber().equals(course.getCourseNumber()))
-//                    .collect(Collectors.averagingDouble(c -> c.getPercentBachelorsDegreeOrHigher() / 100.0));
-//                return Math.pow(age - ageAvg, 2)
-//                    + Math.pow((gender / 100.0) - genderAvg, 2)
-//                    + Math.pow((isBachelorOrHigher / 100.0) - bachelorsAvg, 2);
-//            }));
-
         List<String> topCourses = map.entrySet().stream()
-            .sorted(Map.Entry.<String, Double>comparingByValue().reversed())
+            .sorted(Map.Entry.<String, Double>comparingByValue())
             .limit(10)
             .map(Map.Entry::getKey)
             .toList();
 
+        System.out.println(topCourses);
+
         // print the similarity of the top 10 courses
-        topCourses.forEach(courseNumber -> System.out.println(courseNumber + ": " + map.get(courseNumber)));
+//        topCourses.forEach(courseNumber -> System.out.println(courseNumber + ": " + map.get(courseNumber)));
+//        System.out.println();
+//        System.out.println(map.get("4.605x"));
+//        System.out.println(map.get("14.73x"));
 
         return topCourses.stream()
             .map(courseNumber -> courses.stream()

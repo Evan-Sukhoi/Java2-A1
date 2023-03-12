@@ -23,7 +23,7 @@ public class LocalAnalyzerTest {
     @BeforeAll
     static void setUp() {
         try {
-            courseAnalyzerClass = Class.forName("OnlineCoursesAnalyzer1");
+            courseAnalyzerClass = Class.forName("OnlineCoursesAnalyzer");
             checkDeclarations();
             Constructor<?> constructor = courseAnalyzerClass.getDeclaredConstructor(String.class);
             if (constructor.getModifiers() != Modifier.PUBLIC) {
