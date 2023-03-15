@@ -1,3 +1,5 @@
+//package src;//package Java2-A1-Release;
+
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -9,6 +11,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -21,7 +24,7 @@ public class OnlineCoursesAnalyzer {
 
     List<Course> courses;
 
-    public static class Course {
+    class Course {
 
         private String institution;
         private String courseNumber;
@@ -49,6 +52,8 @@ public class OnlineCoursesAnalyzer {
         private double percentMale;
         private double percentFemale;
         private double percentBachelorsDegreeOrHigher;
+
+        private double similarity = Double.MAX_VALUE;
 
         public Course(Course course) {
             this.institution = course.institution;
@@ -205,42 +210,13 @@ public class OnlineCoursesAnalyzer {
             return medianAge;
         }
 
-        public double getPercentBachelorsDegreeOrHigher(){
+        public double getPercentBachelorsDegreeOrHigher() {
             return percentBachelorsDegreeOrHigher;
         }
     }
 
     public OnlineCoursesAnalyzer(String datasetPath) throws IOException {
-//        this.courses = Files.lines(Paths.get(datasetPath))
-//            .skip(1)
-//            .map(l -> l.split(",(?=([^\\\"]*\\\"[^\\\"]*\\\")*[^\\\"]*$)"))
-//            .map(a -> new Course(
-//                a[0],
-//                a[1],
-//                a[2],
-//                a[3],
-//                a[4],
-//                a[5],
-//                Integer.parseInt(a[6]),
-//                Integer.parseInt(a[7]),
-//                Integer.parseInt(a[8]),
-//                double.parsedouble(a[9]),
-//                double.parsedouble(a[10]),
-//                double.parsedouble(a[11]),
-//                double.parsedouble(a[12]),
-//                double.parsedouble(a[13]),
-//                double.parsedouble(a[14]),
-//                double.parsedouble(a[15]),
-//                double.parsedouble(a[16]),
-//                double.parsedouble(a[17]),
-//                double.parsedouble(a[18]),
-//                double.parsedouble(a[19]),
-//                double.parsedouble(a[20]),
-//                double.parsedouble(a[21]),
-//                double.parsedouble(a[22])
-//            ));
-
-        this.courses = new ArrayList<>();
+        this.courses = new ArrayList<Course>();
         BufferedReader br = null;
         String line;
         try {
@@ -260,7 +236,7 @@ public class OnlineCoursesAnalyzer {
                     Double.parseDouble(info[17]),
                     Double.parseDouble(info[18]), Double.parseDouble(info[19]),
                     Double.parseDouble(info[20]),
-                    Double.parseDouble(info[20]), Double.parseDouble(info[21]));
+                    Double.parseDouble(info[21]), Double.parseDouble(info[22]));
                 courses.add(course);
             }
         } catch (IOException e) {
@@ -380,9 +356,11 @@ public class OnlineCoursesAnalyzer {
     }
 
     //5
-    public List<String> searchCourses(String courseSubject, double percentAudited, double totalCourseHours) {
+    public List<String> searchCourses(String courseSubject, double percentAudited,
+        double totalCourseHours) {
         return courses.stream()
-            .filter(course -> course.getCourseSubjectSet().stream().anyMatch(subject -> subject.equalsIgnoreCase(courseSubject)))
+            .filter(course -> course.getCourseSubjectSet().stream()
+                .anyMatch(subject -> subject.equalsIgnoreCase(courseSubject)))
             .filter(course -> course.getPercentAudited() >= percentAudited)
             .filter(course -> course.getTotalCourseHours() <= totalCourseHours)
             .map(Course::getCourseTitle)
@@ -396,45 +374,51 @@ public class OnlineCoursesAnalyzer {
         Map<String, Double> map = courses.stream()
             .collect(Collectors.groupingBy(Course::getCourseNumber,
                 Collectors.mapping(
-                    course -> Arrays.asList(course.getMedianAge(), course.getPercentMale(), course.getPercentBachelorsDegreeOrHigher()),
+                    course -> Arrays.asList(course.getMedianAge(), course.getPercentMale(),
+                        course.getPercentBachelorsDegreeOrHigher()),
                     Collectors.toList())))
             .entrySet().stream()
             .collect(Collectors.toMap(Map.Entry::getKey,
                 entry -> {
-                    double[] averages = IntStream.range(0, 3) // 获取每一列
-                        .mapToDouble(column -> entry.getValue().stream() // 将每一行映射为这一列的元素
+                    double[] averages = IntStream.range(0, 3)
+                        .mapToDouble(column -> entry.getValue().stream()
                             .mapToDouble(row -> row.get(column))
                             .average()
                             .orElse(0.0))
-                        .toArray(); // 将平均值放到数组中
+                        .toArray();
 
                     return Math.pow(age - averages[0], 2) +
                         Math.pow((gender * 100) - averages[1], 2) +
                         Math.pow((isBachelorOrHigher * 100) - averages[2], 2);
                 }));
 
-        List<String> topCourses = map.entrySet().stream()
-            .sorted(Map.Entry.<String, Double>comparingByValue())
-            .limit(10)
+        List<String> topTitles = map.entrySet().stream()
+            .sorted(Map.Entry.<String, Double>comparingByValue()
+                .thenComparing((o1, o2) -> {
+                    if (!Objects.equals(o1.getValue(), o2.getValue())) {
+                        return 0;
+                    }else{
+                        Comparator<String> courseTitleComparator = Comparator.comparing((String key) -> courses.stream()
+                            .filter(course -> course.getCourseNumber().equals(key))
+                            .max(Comparator.comparing(Course::getLaunchDate))
+                            .get()
+                            .getCourseTitle());
+                        return courseTitleComparator.compare(o1.getKey(), o2.getKey());
+                    }
+                })
+            )
+            .limit(30)
             .map(Map.Entry::getKey)
-            .toList();
-
-        System.out.println(topCourses);
-
-        // print the similarity of the top 10 courses
-//        topCourses.forEach(courseNumber -> System.out.println(courseNumber + ": " + map.get(courseNumber)));
-//        System.out.println();
-//        System.out.println(map.get("4.605x"));
-//        System.out.println(map.get("14.73x"));
-
-        return topCourses.stream()
             .map(courseNumber -> courses.stream()
                 .filter(course -> course.getCourseNumber().equals(courseNumber))
                 .max(Comparator.comparing(Course::getLaunchDate))
                 .get())
             .map(Course::getCourseTitle)
             .distinct()
-            .collect(Collectors.toList());
+            .limit(10)
+            .toList();
+
+        return topTitles;
     }
 
     public static void main(String[] args) throws IOException {
@@ -448,7 +432,6 @@ public class OnlineCoursesAnalyzer {
 
         analyzer.recommendCourses(25, 1, 1).forEach(System.out::println);
 //        System.out.println(analyzer.courses.get(183).getInstructorsSet().toString());
-
 
 //            analyzer.courses.limit(10).forEach(System.out::println);
 
