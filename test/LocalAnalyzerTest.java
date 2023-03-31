@@ -17,6 +17,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @SuppressWarnings({"unchecked"})
 public class LocalAnalyzerTest {
+
     private static Class<?> courseAnalyzerClass;
     private static Object courseInfo;
 
@@ -27,7 +28,8 @@ public class LocalAnalyzerTest {
             checkDeclarations();
             Constructor<?> constructor = courseAnalyzerClass.getDeclaredConstructor(String.class);
             if (constructor.getModifiers() != Modifier.PUBLIC) {
-                throw new NoSuchMethodException("The constructor from class OnlineCoursesAnalyzer is not public!");
+                throw new NoSuchMethodException(
+                    "The constructor from class OnlineCoursesAnalyzer is not public!");
             }
             courseInfo = constructor.newInstance("resources/local.csv");
         } catch (ClassNotFoundException | InvocationTargetException | InstantiationException |
@@ -39,17 +41,18 @@ public class LocalAnalyzerTest {
 
     static void checkDeclarations() {
         MethodEntity[] movieAnalyzerMethods = {
-                new MethodEntity("getPtcpCountByInst", Map.class),
-                new MethodEntity("getPtcpCountByInstAndSubject", Map.class),
-                new MethodEntity("getCourseListOfInstructor", Map.class),
-                new MethodEntity("getCourses", List.class, int.class, String.class),
-                new MethodEntity("searchCourses", List.class, String.class, double.class, double.class),
-                new MethodEntity("recommendCourses", List.class, int.class, int.class, int.class)
+            new MethodEntity("getPtcpCountByInst", Map.class),
+            new MethodEntity("getPtcpCountByInstAndSubject", Map.class),
+            new MethodEntity("getCourseListOfInstructor", Map.class),
+            new MethodEntity("getCourses", List.class, int.class, String.class),
+            new MethodEntity("searchCourses", List.class, String.class, double.class, double.class),
+            new MethodEntity("recommendCourses", List.class, int.class, int.class, int.class)
         };
         List<String> errorMessages = new ArrayList<>();
         for (MethodEntity m : movieAnalyzerMethods) {
             if (!m.checkForClass(courseAnalyzerClass)) {
-                errorMessages.add("The method [" + m + "] from class OnlineCoursesAnalyzer does not exist!");
+                errorMessages.add(
+                    "The method [" + m + "] from class OnlineCoursesAnalyzer does not exist!");
             }
         }
         assertTrue(errorMessages.isEmpty(), String.join(System.lineSeparator(), errorMessages));
@@ -64,7 +67,9 @@ public class LocalAnalyzerTest {
             sb.append(entry.getValue());
             sb.append("\n");
         }
-        if (sb.length() == 0) return "";
+        if (sb.length() == 0) {
+            return "";
+        }
         return sb.substring(0, sb.length() - 1).strip();
     }
 
@@ -75,7 +80,9 @@ public class LocalAnalyzerTest {
             sb.append(s);
             sb.append("\n");
         }
-        if (sb.length() == 0) return "";
+        if (sb.length() == 0) {
+            return "";
+        }
         return sb.substring(0, sb.length() - 1).strip();
     }
 
@@ -91,7 +98,8 @@ public class LocalAnalyzerTest {
             return false;
         }
         for (Map.Entry<K, V> entry : objMap.entrySet()) {
-            Item<K, V> item = (Item<K, V>) new Item<>(entry.getKey().toString(), entry.getValue().toString());
+            Item<K, V> item = (Item<K, V>) new Item<>(entry.getKey().toString(),
+                entry.getValue().toString());
             if (!expectedList.contains(item)) {
                 return false;
             }
@@ -106,8 +114,8 @@ public class LocalAnalyzerTest {
             Object res = method.invoke(courseInfo);
             assertTrue(res instanceof Map<?, ?>);
             String expected = Files.readString(Paths.get("resources", "local_answer", "Q1.txt"),
-                            StandardCharsets.UTF_8)
-                    .replace("\r", "").strip();
+                    StandardCharsets.UTF_8)
+                .replace("\r", "").strip();
             assertEquals(expected, mapToString(res));
         } catch (NoSuchMethodException | InvocationTargetException |
                  IllegalAccessException | IOException e) {
@@ -123,8 +131,8 @@ public class LocalAnalyzerTest {
             Object res = method.invoke(courseInfo);
             assertTrue(res instanceof Map<?, ?>);
             String expected = Files.readString(Paths.get("resources", "local_answer", "Q2.txt"),
-                            StandardCharsets.UTF_8)
-                    .replace("\r", "").strip();
+                    StandardCharsets.UTF_8)
+                .replace("\r", "").strip();
             assertEquals(expected, mapToString(res));
         } catch (NoSuchMethodException | InvocationTargetException |
                  IllegalAccessException | IOException e) {
@@ -140,8 +148,8 @@ public class LocalAnalyzerTest {
             Object res = method.invoke(courseInfo);
             assertTrue(res instanceof Map<?, ?>);
             String expected = Files.readString(Paths.get("resources", "local_answer", "Q3.txt"),
-                            StandardCharsets.UTF_8)
-                    .replace("\r", "").strip();
+                    StandardCharsets.UTF_8)
+                .replace("\r", "").strip();
             assertTrue(compareMapWithoutOrder(res, expected));
         } catch (NoSuchMethodException | InvocationTargetException |
                  IllegalAccessException | IOException e) {
@@ -157,14 +165,14 @@ public class LocalAnalyzerTest {
             Object res1 = method.invoke(courseInfo, 10, "hours");
             assertTrue(res1 instanceof List<?>);
             String expected1 = Files.readString(Paths.get("resources", "local_answer", "Q4_1.txt"),
-                            StandardCharsets.UTF_8)
-                    .replace("\r", "").strip();
+                    StandardCharsets.UTF_8)
+                .replace("\r", "").strip();
             assertEquals(expected1, listToString(res1));
             Object res2 = method.invoke(courseInfo, 15, "participants");
             assertTrue(res2 instanceof List<?>);
             String expected2 = Files.readString(Paths.get("resources", "local_answer", "Q4_2.txt"),
-                            StandardCharsets.UTF_8)
-                    .replace("\r", "").strip();
+                    StandardCharsets.UTF_8)
+                .replace("\r", "").strip();
             assertEquals(expected2, listToString(res2));
         } catch (NoSuchMethodException | InvocationTargetException |
                  IllegalAccessException | IOException e) {
@@ -176,18 +184,19 @@ public class LocalAnalyzerTest {
     @Test
     void testSearchCourses() {
         try {
-            Method method = courseAnalyzerClass.getMethod("searchCourses", String.class, double.class, double.class);
+            Method method = courseAnalyzerClass.getMethod("searchCourses", String.class,
+                double.class, double.class);
             Object res1 = method.invoke(courseInfo, "computer", 20.0, 700);
             assertTrue(res1 instanceof List<?>);
             String expected1 = Files.readString(Paths.get("resources", "local_answer", "Q5_1.txt"),
-                            StandardCharsets.UTF_8)
-                    .replace("\r", "").strip();
+                    StandardCharsets.UTF_8)
+                .replace("\r", "").strip();
             assertEquals(expected1, listToString(res1));
             Object res2 = method.invoke(courseInfo, "SCIENCE", 25.0, 400);
             assertTrue(res2 instanceof List<?>);
             String expected2 = Files.readString(Paths.get("resources", "local_answer", "Q5_2.txt"),
-                            StandardCharsets.UTF_8)
-                    .replace("\r", "").strip();
+                    StandardCharsets.UTF_8)
+                .replace("\r", "").strip();
             assertEquals(expected2, listToString(res2));
         } catch (NoSuchMethodException | InvocationTargetException |
                  IllegalAccessException | IOException e) {
@@ -199,24 +208,25 @@ public class LocalAnalyzerTest {
     @Test
     void testRecommendCourses() {
         try {
-            Method method = courseAnalyzerClass.getMethod("recommendCourses", int.class, int.class, int.class);
+            Method method = courseAnalyzerClass.getMethod("recommendCourses", int.class, int.class,
+                int.class);
             Object res1 = method.invoke(courseInfo, 25, 1, 1);
             assertTrue(res1 instanceof List<?>);
             String expected1 = Files.readString(Paths.get("resources", "local_answer", "Q6_1.txt"),
-                            StandardCharsets.UTF_8)
-                    .replace("\r", "").strip();
+                    StandardCharsets.UTF_8)
+                .replace("\r", "").strip();
             assertEquals(expected1, listToString(res1));
             Object res2 = method.invoke(courseInfo, 30, 0, 1);
             assertTrue(res2 instanceof List<?>);
             String expected2 = Files.readString(Paths.get("resources", "local_answer", "Q6_2.txt"),
-                            StandardCharsets.UTF_8)
-                    .replace("\r", "").strip();
+                    StandardCharsets.UTF_8)
+                .replace("\r", "").strip();
             assertEquals(expected2, listToString(res2));
             Object res3 = method.invoke(courseInfo, 35, 1, 0);
             assertTrue(res3 instanceof List<?>);
             String expected3 = Files.readString(Paths.get("resources", "local_answer", "Q6_3.txt"),
-                            StandardCharsets.UTF_8)
-                    .replace("\r", "").strip();
+                    StandardCharsets.UTF_8)
+                .replace("\r", "").strip();
             assertEquals(expected3, listToString(res3));
         } catch (NoSuchMethodException | InvocationTargetException |
                  IllegalAccessException | IOException e) {
